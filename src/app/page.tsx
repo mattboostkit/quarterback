@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { FileUpload } from '@/components/FileUpload'
 import { PersonaChat } from '@/components/PersonaChat'
+import { DebugPanel } from '@/components/DebugPanel'
 import { supabase } from '@/lib/supabase'
 import { Upload, FileText, MessageSquare } from 'lucide-react'
 
@@ -143,6 +144,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <DebugPanel />
     </div>
   )
 }
