@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { n8nService } from '@/lib/n8n'
 
 // Environment variables - will be checked at runtime
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -7,6 +8,8 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const openaiApiKey = process.env.OPENAI_API_KEY || ''
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+  
   try {
     // Check environment variables at runtime
     if (!supabaseUrl || !supabaseServiceKey) {
@@ -85,6 +88,28 @@ Format the response as JSON with these keys: name, demographics, characteristics
     if (updateError) {
       throw updateError
     }
+
+    // Notify N8N of persona enrichment completion
+    await n8nService.notifyPersonaEnriched({
+      data: {
+        personaId: personaId,
+        projectId: persona.project_id,
+        enrichmentResults: {
+          contentPreferences: enrichedData.contentPreferences,
+          purchaseMotivators: enrichedData.purchaseMotivators,
+          campaignIdeas: enrichedData.marketingRecommendations,
+          contentAvoidance: enrichedData.contentAvoidance,
+          demographics: enrichedData.demographics
+        },
+        llmProvider: 'openai',
+        processingTime: Date.now() - startTime,
+        metadata: {
+          enrichedAt: new Date().toISOString(),
+          confidence: 0.85, // Could be calculated based on response quality
+          tokensUsed: aiResponse.usage?.total_tokens
+        }
+      }
+    })
 
     return NextResponse.json({ success: true, enrichedData })
 

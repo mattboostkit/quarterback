@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { QueryTemplatePanel } from '@/components/QueryTemplatePanel'
 import { supabase } from '@/lib/supabase'
+import { n8nService } from '@/lib/n8n'
 import { Send, MessageSquare, Template } from 'lucide-react'
 
 type Message = {
@@ -159,9 +160,33 @@ Prestige alone won't sway us - we need substance behind the badge.`
 Would you like me to elaborate on any specific aspect of how this audience segment would respond to your campaign or content strategy?`
   }
 
-  const handleTemplateQuery = (query: string, templateTitle: string) => {
+  const handleTemplateQuery = async (query: string, templateTitle: string) => {
     setActiveTab('chat')
-    sendMessage(query)
+    const startTime = Date.now()
+    
+    // Send the message and get the response
+    await sendMessage(query)
+    
+    // Notify N8N of query completion (after message is sent)
+    setTimeout(async () => {
+      try {
+        await n8nService.notifyQueryCompleted({
+          data: {
+            personaId: persona.id,
+            queryType: templateTitle,
+            queryTemplate: query,
+            response: 'Generated response', // In real app, get actual response
+            responseLength: 0, // Would be actual response length
+            metadata: {
+              completedAt: new Date().toISOString(),
+              processingTime: Date.now() - startTime
+            }
+          }
+        })
+      } catch (error) {
+        console.error('Failed to notify N8N of query completion:', error)
+      }
+    }, 2000) // Wait for message to be processed
   }
 
   return (

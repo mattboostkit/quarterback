@@ -123,6 +123,23 @@ export default function Home() {
               >
                 Test Storage
               </button>
+              <button 
+                onClick={async () => {
+                  console.log('Testing N8N webhook...')
+                  try {
+                    const response = await fetch('/api/n8n/test', { method: 'POST' })
+                    const result = await response.json()
+                    console.log('N8N test result:', result)
+                    alert(result.success ? `✅ N8N Success: ${result.message}` : `❌ N8N Error: ${result.message}`)
+                  } catch (err) {
+                    console.error('N8N test error:', err)
+                    alert(`❌ N8N Error: ${err}`)
+                  }
+                }}
+                className="bg-purple-500 text-white px-3 py-1 rounded text-sm hover:bg-purple-600"
+              >
+                Test N8N
+              </button>
             </div>
           </div>
         </header>

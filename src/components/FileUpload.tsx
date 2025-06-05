@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
+import { n8nService } from '@/lib/n8n'
 
 interface FileUploadProps {
   projectId: string
@@ -81,6 +82,24 @@ export function FileUpload({ projectId, onUploadComplete }: FileUploadProps) {
         .single()
 
       if (personaError) throw personaError
+
+      // Notify N8N of persona creation
+      await n8nService.notifyPersonaCreated({
+        data: {
+          personaId: persona.id,
+          projectId: projectId,
+          clientId: '11111111-1111-1111-1111-111111111111', // Demo client ID
+          personaName: persona.name,
+          csvData: data,
+          rawDataPoints: data.length,
+          status: 'created',
+          metadata: {
+            uploadedAt: new Date().toISOString(),
+            fileName: file.name,
+            fileSize: file.size
+          }
+        }
+      })
 
       // Trigger processing (in a real app, this would call an edge function)
       // For now, we'll just simulate processing
