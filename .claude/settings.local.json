@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(npx create-next-app:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm install)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)",
+      "Bash(npx netlify deploy:*)",
+      "Bash(npx netlify:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(cat:*)",
+      "Bash(node:*)",
+      "Bash(rm:*)",
+      "Bash(npx next build:*)",
+      "Bash(hostname:*)",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(git config:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(GIT_ASKPASS=echo git push -u origin main 2 >& 1)",
+      "Bash(chmod:*)",
+      "Bash(./push.sh)"
+    ]
+  },
+  "enableAllProjectMcpServers": false
+}
