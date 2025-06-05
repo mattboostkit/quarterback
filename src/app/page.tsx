@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { FileUpload } from '@/components/FileUpload'
+import { SheetsImport } from '@/components/SheetsImport'
 import { PersonaChat } from '@/components/PersonaChat'
 import { DebugPanel } from '@/components/DebugPanel'
 import { SimpleTest } from '@/components/SimpleTest'
@@ -24,7 +25,7 @@ const DEMO_PROJECT_ID = '22222222-2222-2222-2222-222222222222'
 export default function Home() {
   const [personas, setPersonas] = useState<Persona[]>([])
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null)
-  const [activeView, setActiveView] = useState<'upload' | 'chat'>('upload')
+  const [activeView, setActiveView] = useState<'upload' | 'sheets' | 'chat'>('upload')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -140,27 +141,57 @@ export default function Home() {
               >
                 Test N8N
               </button>
+              <button 
+                onClick={async () => {
+                  console.log('Testing Google Sheets...')
+                  try {
+                    const response = await fetch('/api/sheets/import?test=true')
+                    const result = await response.json()
+                    console.log('Sheets test result:', result)
+                    alert(result.success ? `✅ Sheets Success: ${result.message}` : `❌ Sheets Error: ${result.message}`)
+                  } catch (err) {
+                    console.error('Sheets test error:', err)
+                    alert(`❌ Sheets Error: ${err}`)
+                  }
+                }}
+                className="bg-orange-500 text-white px-3 py-1 rounded text-sm hover:bg-orange-600"
+              >
+                Test Sheets
+              </button>
             </div>
           </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-6">
+            {/* Data Source Selection */}
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setActiveView('upload')}
+                variant={activeView === 'upload' ? 'default' : 'outline'}
+                className="flex-1"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                CSV Upload
+              </Button>
+              <Button 
+                onClick={() => setActiveView('sheets')}
+                variant={activeView === 'sheets' ? 'default' : 'outline'}
+                className="flex-1"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Google Sheets
+              </Button>
+            </div>
+
+            {/* Personas List */}
             <Card>
               <CardHeader>
                 <CardTitle>Personas</CardTitle>
                 <CardDescription>Your audience segments</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button 
-                  onClick={() => setActiveView('upload')}
-                  variant="outline"
-                  className="w-full mb-4"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload CSV
-                </Button>
                 
                 <div className="space-y-2">
                   {loading ? (
@@ -194,6 +225,11 @@ export default function Home() {
               <FileUpload 
                 projectId={DEMO_PROJECT_ID}
                 onUploadComplete={handleUploadComplete}
+              />
+            ) : activeView === 'sheets' ? (
+              <SheetsImport 
+                projectId={DEMO_PROJECT_ID}
+                onImportComplete={handleUploadComplete}
               />
             ) : selectedPersona ? (
               <PersonaChat persona={selectedPersona} />
