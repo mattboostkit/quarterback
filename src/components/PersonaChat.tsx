@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { QueryTemplatePanel } from '@/components/QueryTemplatePanel'
 import { supabase } from '@/lib/supabase'
-import { Send, ChevronDown } from 'lucide-react'
+import { Send, MessageSquare, Template } from 'lucide-react'
 
 type Message = {
   id: string
@@ -19,34 +20,12 @@ type Persona = {
   raw_data: any
 }
 
-const QUERY_TEMPLATES = [
-  {
-    label: "Content Preferences",
-    query: "Please expand explicitly on the types of content this group likes to consume"
-  },
-  {
-    label: "Purchase Motivators",
-    query: "Please expand explicitly on the purchasing motivators for automotive products for this group (endorsements, prestige, price, technical spec, early adoption, etc)"
-  },
-  {
-    label: "Content Dislikes",
-    query: "Please expand explicitly on the types of content this group are dismissive of, or do not like to engage with or consume"
-  },
-  {
-    label: "Campaign Ideas - Audi x Spurs",
-    query: "Please give specific content ideas for an automotive brand (Audi) that sponsors Tottenham Hotspur to engage this audience group effectively on social media and drive affinity and interest in the brand products"
-  },
-  {
-    label: "Ad Formats & Channels",
-    query: "I'm creating a digital marketing campaign for Audi as part of their Tottenham sponsorship. Tell me what ad formats, channels and content types this audience are most likely to engage with"
-  }
-]
 
 export function PersonaChat({ persona }: { persona: Persona }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [showTemplates, setShowTemplates] = useState(false)
+  const [activeTab, setActiveTab] = useState<'templates' | 'chat'>('templates')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [conversationId, setConversationId] = useState<string | null>(null)
 
@@ -180,12 +159,53 @@ Prestige alone won't sway us - we need substance behind the badge.`
 Would you like me to elaborate on any specific aspect of how this audience segment would respond to your campaign or content strategy?`
   }
 
+  const handleTemplateQuery = (query: string, templateTitle: string) => {
+    setActiveTab('chat')
+    sendMessage(query)
+  }
+
   return (
-    <Card className="h-[600px] flex flex-col">
-      <CardHeader>
-        <CardTitle>Chat with {persona.name}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 flex flex-col p-0">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[600px]">
+      {/* Query Templates Panel */}
+      <div className="lg:col-span-1">
+        <QueryTemplatePanel 
+          onRunQuery={handleTemplateQuery}
+          isLoading={loading}
+        />
+      </div>
+
+      {/* Chat Interface */}
+      <div className="lg:col-span-1">
+        <Card className="h-full flex flex-col">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                Chat with {persona.name}
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant={activeTab === 'templates' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveTab('templates')}
+                  className="lg:hidden"
+                >
+                  <Template className="w-4 h-4 mr-1" />
+                  Templates
+                </Button>
+                <Button
+                  variant={activeTab === 'chat' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveTab('chat')}
+                  className="lg:hidden"
+                >
+                  <MessageSquare className="w-4 h-4 mr-1" />
+                  Chat
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col p-0">
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {messages.map((message) => (
@@ -220,34 +240,6 @@ Would you like me to elaborate on any specific aspect of how this audience segme
 
         {/* Input */}
         <div className="border-t p-4">
-          <div className="mb-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowTemplates(!showTemplates)}
-              className="text-sm"
-            >
-              Query Templates <ChevronDown className={`w-4 h-4 ml-1 transition-transform ${showTemplates ? 'rotate-180' : ''}`} />
-            </Button>
-            {showTemplates && (
-              <div className="mt-2 space-y-1">
-                {QUERY_TEMPLATES.map((template, idx) => (
-                  <Button
-                    key={idx}
-                    variant="outline"
-                    size="sm"
-                    className="text-xs mr-2 mb-1"
-                    onClick={() => {
-                      setInput(template.query)
-                      setShowTemplates(false)
-                    }}
-                  >
-                    {template.label}
-                  </Button>
-                ))}
-              </div>
-            )}
-          </div>
           <div className="flex space-x-2">
             <input
               type="text"
@@ -263,7 +255,9 @@ Would you like me to elaborate on any specific aspect of how this audience segme
             </Button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   )
 }
