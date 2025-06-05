@@ -26,6 +26,7 @@ export interface PersonaData {
 class GoogleSheetsService {
   private sheets: any
   private readonly SHEET_ID = '1X5hXnmSKNYtN1jdSQGPXXJ2Fnu8gNEXyFqqIUl31L1A'
+  private readonly MAIN_SHEET = 'WESTY Audience Example'
 
   constructor() {
     // Initialize with API key for public sheets (simpler for MVP)
@@ -42,8 +43,8 @@ class GoogleSheetsService {
         return this.getMockData()
       }
 
-      // Read the main data range - adjust based on your sheet structure
-      const range = 'Sheet1!A2:N100' // Assuming headers in row 1, data starts row 2
+      // Read the main data range from WESTY Audience Example sheet
+      const range = `${this.MAIN_SHEET}!A:L` // Read all data from WESTY sheet
       
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId: this.SHEET_ID,
@@ -57,28 +58,36 @@ class GoogleSheetsService {
         return this.getMockData()
       }
 
-      // Parse rows into PersonaData format
+      // Parse rows into PersonaData format - WESTY sheet structure
+      // Row 0: Title, Row 1: Headers, Row 2+: Data
       const personas: PersonaData[] = rows
+        .slice(2) // Skip title and header rows
         .filter((row: any[]) => row[0] && row[0].trim()) // Filter out empty rows
         .map((row: any[], index: number) => {
+          // Extract persona name and details from first column
+          const firstColumn = row[0] || ''
+          const parts = firstColumn.split(':')
+          const nameAndDemo = parts[0] || `Persona ${index + 1}`
+          const summary = parts[1] || ''
+          
           return {
-            audienceName: row[0] || `Persona ${index + 1}`,
+            audienceName: nameAndDemo.trim(),
             percentage: row[1] || '0%',
             demographics: {
-              genderSplit: row[2] || '',
-              devicePreference: row[3] || '',
-              summary: row[13] || '' // Summary column
+              genderSplit: nameAndDemo.includes('Male') ? nameAndDemo.match(/\d+% Male/)?.[0] || '' : '',
+              devicePreference: nameAndDemo.includes('iOS') ? nameAndDemo.match(/\d+% iOS/)?.[0] || '' : '',
+              summary: summary.trim()
             },
-            topOnlineTopics: this.parseCommaSeparated(row[4]),
-            favouriteSocialMedia: this.parseCommaSeparated(row[5]),
-            favouriteMedia: this.parseCommaSeparated(row[6]),
-            topInfluencers: this.parseCommaSeparated(row[7]),
-            favouriteBrands: this.parseCommaSeparated(row[8]),
-            topJobs: this.parseCommaSeparated(row[9]),
-            locations: this.parseCommaSeparated(row[10]),
-            bioKeywords: this.parseCommaSeparated(row[11]),
-            youtubeChannels: this.parseCommaSeparated(row[12]),
-            insights: this.parseCommaSeparated(row[13])
+            topOnlineTopics: this.parseCommaSeparated(row[2]),
+            favouriteSocialMedia: this.parseCommaSeparated(row[3]),
+            favouriteMedia: this.parseCommaSeparated(row[4]),
+            topInfluencers: this.parseCommaSeparated(row[5]),
+            favouriteBrands: this.parseCommaSeparated(row[6]),
+            topJobs: this.parseCommaSeparated(row[7]),
+            locations: this.parseCommaSeparated(row[8]),
+            bioKeywords: this.parseCommaSeparated(row[9]),
+            youtubeChannels: this.parseCommaSeparated(row[10]),
+            insights: this.parseCommaSeparated(row[11])
           }
         })
 
