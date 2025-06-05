@@ -34,13 +34,24 @@ export function FileUpload({ projectId, onUploadComplete }: FileUploadProps) {
     setError(null)
 
     try {
+      // Check if Supabase is properly configured
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        throw new Error('Supabase is not configured. Please check your environment variables.')
+      }
+
       // Upload file to Supabase Storage
       const fileName = `${projectId}/${Date.now()}-${file.name}`
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('csv-uploads')
         .upload(fileName, file)
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError)
+        if (uploadError.message?.includes('JWT') || uploadError.message?.includes('401')) {
+          throw new Error('Authentication error. Please check your Supabase configuration.')
+        }
+        throw uploadError
+      }
 
       // Parse CSV content
       const text = await file.text()

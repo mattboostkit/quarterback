@@ -27,7 +27,8 @@
       "Bash(GIT_ASKPASS=echo git push -u origin main 2 >& 1)",
       "Bash(chmod:*)",
       "Bash(./push.sh)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git rm:*)"
     ]
   },
   "enableAllProjectMcpServers": false
