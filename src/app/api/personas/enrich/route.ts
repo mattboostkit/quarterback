@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const openaiApiKey = process.env.OPENAI_API_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+// Environment variables - will be checked at runtime
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const openaiApiKey = process.env.OPENAI_API_KEY || ''
 
 export async function POST(request: NextRequest) {
   try {
+    // Check environment variables at runtime
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json(
+        { error: 'Missing Supabase configuration' },
+        { status: 500 }
+      )
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
     const { personaId } = await request.json()
 
     // Fetch persona data
