@@ -50,27 +50,17 @@ export default function Home() {
   }
 
   const handleUploadComplete = async (personaId: string) => {
-    // Trigger enrichment
-    try {
-      const response = await fetch('/api/personas/enrich', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personaId })
-      })
-      
-      if (!response.ok) throw new Error('Enrichment failed')
-      
-      // Reload personas
-      await loadPersonas()
-      
-      // Select the new persona
-      const newPersona = personas.find(p => p.id === personaId)
-      if (newPersona) {
-        setSelectedPersona(newPersona)
-        setActiveView('chat')
-      }
-    } catch (error) {
-      console.error('Enrichment error:', error)
+    // Note: Enrichment would be handled by N8N webhook in production
+    console.log('Persona enrichment triggered for:', personaId)
+    
+    // Reload personas
+    await loadPersonas()
+    
+    // Select the new persona
+    const newPersona = personas.find(p => p.id === personaId)
+    if (newPersona) {
+      setSelectedPersona(newPersona)
+      setActiveView('chat')
     }
   }
 

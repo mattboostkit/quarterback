@@ -41,7 +41,7 @@ export function SheetsImport({ projectId, onImportComplete }: SheetsImportProps)
     setError(null)
 
     try {
-      const response = await fetch('/api/sheets/import')
+      const response = await fetch('/.netlify/functions/sheets-import')
       const data = await response.json()
 
       if (!response.ok) {
@@ -64,7 +64,7 @@ export function SheetsImport({ projectId, onImportComplete }: SheetsImportProps)
     setError(null)
 
     try {
-      const response = await fetch('/api/sheets/import', {
+      const response = await fetch('/.netlify/functions/sheets-import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -93,7 +93,7 @@ export function SheetsImport({ projectId, onImportComplete }: SheetsImportProps)
   const testConnection = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/sheets/import?test=true')
+      const response = await fetch('/.netlify/functions/sheets-import?test=true')
       const data = await response.json()
       
       if (data.success) {

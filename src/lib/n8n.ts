@@ -186,10 +186,4 @@ class N8NService {
 // Export singleton instance
 export const n8nService = new N8NService()
 
-// Export types for use in other files
-export type {
-  N8NWebhookPayload,
-  PersonaCreatedPayload,
-  PersonaEnrichedPayload,
-  QueryCompletedPayload
-}
+// Types are already exported above with their definitions

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { QueryTemplatePanel } from '@/components/QueryTemplatePanel'
 import { supabase } from '@/lib/supabase'
 import { n8nService } from '@/lib/n8n'
-import { Send, MessageSquare, Template } from 'lucide-react'
+import { Send, MessageSquare, FileText } from 'lucide-react'
 
 type Message = {
   id: string
@@ -215,7 +215,7 @@ Would you like me to elaborate on any specific aspect of how this audience segme
                   onClick={() => setActiveTab('templates')}
                   className="lg:hidden"
                 >
-                  <Template className="w-4 h-4 mr-1" />
+                  <FileText className="w-4 h-4 mr-1" />
                   Templates
                 </Button>
                 <Button
