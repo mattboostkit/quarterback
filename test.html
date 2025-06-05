@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quarterback Debug Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-box { background: #f0f8ff; border: 2px solid #4CAF50; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        button { background: #4CAF50; color: white; padding: 10px 20px; margin: 10px; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        .result { background: #f9f9f9; border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .error { background: #ffebee; border-color: #f44336; }
+        .success { background: #e8f5e8; border-color: #4CAF50; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏈 Quarterback - Supabase Debug Test</h1>
+        
+        <div class="test-box">
+            <h2>🧪 Authentication Test</h2>
+            <p>This will test the exact same Supabase queries that are failing in your app.</p>
+            
+            <button onclick="testDatabase()">Test Database Connection</button>
+            <button onclick="testStorage()">Test Storage Upload</button>
+            <button onclick="testSpecificQuery()">Test Personas Query</button>
+            
+            <div id="results"></div>
+        </div>
+        
+        <div class="test-box">
+            <h2>📋 Environment Info</h2>
+            <div id="env-info"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://igthouwddtjftxaxuhqf.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlndGhvdXdkZHRqZnR4YXh1aHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NDM1NzIsImV4cCI6MjA2NDUxOTU3Mn0.ME3Asvn6dlbCr7YPDtXO6ywbfYgv56cPy7suWJQ1Ka8'
+        
+        const { createClient } = supabase
+        const sb = createClient(supabaseUrl, supabaseKey)
+        
+        // Display environment info
+        document.getElementById('env-info').innerHTML = `
+            <strong>Supabase URL:</strong> ${supabaseUrl}<br>
+            <strong>Key Length:</strong> ${supabaseKey.length} characters<br>
+            <strong>Timestamp:</strong> ${new Date().toISOString()}
+        `
+        
+        function addResult(message, isError = false) {
+            const div = document.createElement('div')
+            div.className = `result ${isError ? 'error' : 'success'}`
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`
+            document.getElementById('results').appendChild(div)
+            console.log(message)
+        }
+        
+        async function testDatabase() {
+            addResult('🔍 Testing basic database connection...')
+            try {
+                const { data, error } = await sb.from('clients').select('count')
+                if (error) {
+                    addResult(`❌ Database Error: ${error.message} (Code: ${error.code || 'N/A'})`, true)
+                } else {
+                    addResult(`✅ Database Success: Connected and found ${data[0]?.count || 0} clients`)
+                }
+            } catch (err) {
+                addResult(`❌ Database Exception: ${err.message}`, true)
+            }
+        }
+        
+        async function testStorage() {
+            addResult('📁 Testing storage access...')
+            try {
+                const testFile = new File(['test content'], 'test.csv', { type: 'text/csv' })
+                const fileName = `test-${Date.now()}.csv`
+                
+                const { data, error } = await sb.storage
+                    .from('csv-uploads')
+                    .upload(fileName, testFile)
+                
+                if (error) {
+                    addResult(`❌ Storage Error: ${error.message}`, true)
+                } else {
+                    addResult(`✅ Storage Success: Uploaded ${fileName}`)
+                    // Clean up
+                    await sb.storage.from('csv-uploads').remove([fileName])
+                    addResult(`🧹 Cleaned up test file`)
+                }
+            } catch (err) {
+                addResult(`❌ Storage Exception: ${err.message}`, true)
+            }
+        }
+        
+        async function testSpecificQuery() {
+            addResult('🎯 Testing the exact personas query that was failing...')
+            try {
+                const { data, error } = await sb
+                    .from('personas')
+                    .select('*')
+                    .eq('project_id', '22222222-2222-2222-2222-222222222222')
+                    .order('created_at', { ascending: false })
+                
+                if (error) {
+                    addResult(`❌ Personas Query Error: ${error.message} (Code: ${error.code || 'N/A'})`, true)
+                    addResult(`🔍 Error Details: ${JSON.stringify(error)}`, true)
+                } else {
+                    addResult(`✅ Personas Query Success: Found ${data.length} personas`)
+                    if (data.length > 0) {
+                        addResult(`📊 First persona: ${data[0].name || 'Unnamed'}`)
+                    }
+                }
+            } catch (err) {
+                addResult(`❌ Personas Query Exception: ${err.message}`, true)
+            }
+        }
+        
+        // Auto-run basic test on load
+        window.onload = function() {
+            addResult('🚀 Page loaded, Supabase client initialized')
+            testDatabase()
+        }
+    </script>
+</body>
+</html>

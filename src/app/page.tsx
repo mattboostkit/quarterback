@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { FileUpload } from '@/components/FileUpload'
 import { PersonaChat } from '@/components/PersonaChat'
 import { DebugPanel } from '@/components/DebugPanel'
+import { SimpleTest } from '@/components/SimpleTest'
 import { supabase } from '@/lib/supabase'
 import { Upload, FileText, MessageSquare } from 'lucide-react'
 
@@ -78,6 +79,52 @@ export default function Home() {
         <header className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900">Quarterback</h1>
           <p className="text-gray-600 mt-2">AI-Powered Audience Persona Insights</p>
+          
+          {/* Debug Test Buttons */}
+          <div className="mt-4 p-4 bg-yellow-100 border border-yellow-400 rounded">
+            <h3 className="font-bold text-yellow-800 mb-2">🧪 Debug Tests (Temporary)</h3>
+            <div className="space-x-2">
+              <button 
+                onClick={async () => {
+                  console.log('Testing database connection...')
+                  try {
+                    const { data, error } = await supabase
+                      .from('personas')
+                      .select('*')
+                      .eq('project_id', DEMO_PROJECT_ID)
+                    console.log('Database test result:', { data, error })
+                    alert(error ? `❌ Database Error: ${error.message}` : `✅ Database Success: Found ${data.length} personas`)
+                  } catch (err) {
+                    console.error('Database test error:', err)
+                    alert(`❌ Database Error: ${err}`)
+                  }
+                }}
+                className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+              >
+                Test Database
+              </button>
+              <button 
+                onClick={async () => {
+                  console.log('Testing storage...')
+                  try {
+                    const testFile = new File(['test'], 'test.csv', { type: 'text/csv' })
+                    const { data, error } = await supabase.storage
+                      .from('csv-uploads')
+                      .upload(`test-${Date.now()}.csv`, testFile)
+                    console.log('Storage test result:', { data, error })
+                    alert(error ? `❌ Storage Error: ${error.message}` : `✅ Storage Success`)
+                    if (data) await supabase.storage.from('csv-uploads').remove([data.path])
+                  } catch (err) {
+                    console.error('Storage test error:', err)
+                    alert(`❌ Storage Error: ${err}`)
+                  }
+                }}
+                className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+              >
+                Test Storage
+              </button>
+            </div>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -145,6 +192,7 @@ export default function Home() {
         </div>
       </div>
       <DebugPanel />
+      <SimpleTest />
     </div>
   )
 }
