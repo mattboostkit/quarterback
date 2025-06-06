@@ -1,6 +1,7 @@
 [build]
   command = "npm run build"
-  publish = "out"
+  # Remove publish directory for standard Next.js deployment
+  # publish = "out"
 
 [functions]
   directory = "netlify/functions"
@@ -10,7 +11,8 @@
   to = "/.netlify/functions/sheets-import"
   status = 200
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Remove SPA redirect for Next.js
+# [[redirects]]
+#   from = "/*"
+#   to = "/index.html"
+#   status = 200
