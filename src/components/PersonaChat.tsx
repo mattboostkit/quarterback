@@ -45,12 +45,11 @@ export function PersonaChat({ persona }: { persona: Persona }) {
 
   const initializeConversation = async () => {
     try {
-      // Create a new conversation
+      // Create a new conversation (without user_id for anonymous access)
       const { data, error } = await supabase
         .from('conversations')
         .insert({
           persona_id: persona.id,
-          user_id: '33333333-3333-3333-3333-333333333333', // Demo user UUID
           title: `Chat with ${persona.name}`
         })
         .select()
