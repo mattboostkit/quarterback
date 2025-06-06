@@ -3,7 +3,18 @@ import { supabase } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
-    const { personaId, conversationId, query } = await request.json()
+    const body = await request.json()
+    const { personaId, conversationId, query } = body
+    
+    console.log('Query persona request:', { personaId, conversationId, query })
+
+    // Validate inputs
+    if (!personaId || !query) {
+      return NextResponse.json(
+        { error: 'Missing required fields: personaId and query' },
+        { status: 400 }
+      )
+    }
 
     // Get persona data
     const { data: persona, error: personaError } = await supabase
@@ -12,20 +23,31 @@ export async function POST(request: NextRequest) {
       .eq('id', personaId)
       .single()
 
-    if (personaError) throw personaError
+    if (personaError) {
+      console.error('Error fetching persona:', personaError)
+      throw personaError
+    }
 
-    // Get recent conversation history
-    const { data: messages, error: messagesError } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: false })
-      .limit(10)
+    // Get recent conversation history if conversationId provided
+    let messages = []
+    if (conversationId) {
+      const { data: messageData, error: messagesError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: false })
+        .limit(10)
 
-    if (messagesError) throw messagesError
+      if (messagesError) {
+        console.error('Error fetching messages:', messagesError)
+        // Continue without messages rather than failing
+      } else {
+        messages = messageData || []
+      }
+    }
 
     // Build context for OpenAI
-    const context = buildPersonaContext(persona, messages?.reverse() || [])
+    const context = buildPersonaContext(persona, messages.reverse())
 
     // Call OpenAI API
     const response = await queryOpenAI(context, query)
@@ -111,7 +133,7 @@ async function queryOpenAI(context: string, query: string): Promise<string> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-mini-2025-04-14',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: context },
           { role: 'user', content: query }
