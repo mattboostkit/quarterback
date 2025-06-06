@@ -33,7 +33,8 @@
       "Bash(true)",
       "Bash(git reset:*)",
       "Bash(curl -s -I http://localhost:3000)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(claude mcp add:*)"
     ]
   },
   "enableAllProjectMcpServers": false

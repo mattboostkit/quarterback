@@ -205,9 +205,9 @@ Would you like me to elaborate on any specific aspect of how this audience segme
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[600px]">
+    <div className="space-y-6">
       {/* Query Templates Panel */}
-      <div className="lg:col-span-1">
+      <div>
         <QueryTemplatePanel 
           onRunQuery={handleTemplateQuery}
           isLoading={loading}
@@ -215,8 +215,8 @@ Would you like me to elaborate on any specific aspect of how this audience segme
       </div>
 
       {/* Chat Interface */}
-      <div className="lg:col-span-1">
-        <Card className="h-full flex flex-col">
+      <div>
+        <Card className="h-[500px] flex flex-col">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">

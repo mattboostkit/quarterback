@@ -9,7 +9,7 @@ import { PersonaChat } from '@/components/PersonaChat'
 import { DebugPanel } from '@/components/DebugPanel'
 import { SimpleTest } from '@/components/SimpleTest'
 import { supabase } from '@/lib/supabase'
-import { Upload, FileText, MessageSquare } from 'lucide-react'
+import { Upload, FileText, MessageSquare, Trash2 } from 'lucide-react'
 
 type Persona = {
   id: string
@@ -61,6 +61,36 @@ export default function Home() {
     if (newPersona) {
       setSelectedPersona(newPersona)
       setActiveView('chat')
+    }
+  }
+
+  const handleDeletePersona = async (personaId: string) => {
+    if (!confirm('Are you sure you want to delete this persona? This will also delete all associated conversations.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/personas/${personaId}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete persona')
+      }
+
+      // If the deleted persona was selected, clear selection
+      if (selectedPersona?.id === personaId) {
+        setSelectedPersona(null)
+        setActiveView('upload')
+      }
+
+      // Reload personas
+      await loadPersonas()
+      
+    } catch (error: any) {
+      console.error('Error deleting persona:', error)
+      alert(`Failed to delete persona: ${error.message}`)
     }
   }
 
@@ -152,9 +182,10 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+        <div className="space-y-6">
+          {/* Top Section - Data Source Selection and Personas */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-1 space-y-6">
             {/* Data Source Selection */}
             <div className="flex gap-2">
               <Button 
@@ -190,48 +221,66 @@ export default function Home() {
                     <p className="text-sm text-gray-500 text-center py-2">No personas yet</p>
                   ) : (
                     personas.map((persona) => (
-                      <Button
-                        key={persona.id}
-                        variant={selectedPersona?.id === persona.id ? 'default' : 'ghost'}
-                        className="w-full justify-start"
-                        onClick={() => {
-                          setSelectedPersona(persona)
-                          setActiveView('chat')
-                        }}
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        {persona.name}
-                      </Button>
+                      <div key={persona.id} className="flex items-center gap-2">
+                        <Button
+                          variant={selectedPersona?.id === persona.id ? 'default' : 'ghost'}
+                          className="flex-1 justify-start"
+                          onClick={() => {
+                            setSelectedPersona(persona)
+                            setActiveView('chat')
+                          }}
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          {persona.name}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeletePersona(persona.id)
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     ))
                   )}
                 </div>
               </CardContent>
             </Card>
+            </div>
+
+            {/* Upload/Import Section */}
+            <div className="lg:col-span-3">
+              {activeView === 'upload' ? (
+                <FileUpload 
+                  projectId={DEMO_PROJECT_ID}
+                  onUploadComplete={handleUploadComplete}
+                />
+              ) : activeView === 'sheets' ? (
+                <SheetsImport 
+                  projectId={DEMO_PROJECT_ID}
+                  onImportComplete={handleUploadComplete}
+                />
+              ) : (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-600">Select upload method or choose a persona below</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            {activeView === 'upload' ? (
-              <FileUpload 
-                projectId={DEMO_PROJECT_ID}
-                onUploadComplete={handleUploadComplete}
-              />
-            ) : activeView === 'sheets' ? (
-              <SheetsImport 
-                projectId={DEMO_PROJECT_ID}
-                onImportComplete={handleUploadComplete}
-              />
-            ) : selectedPersona ? (
+          {/* Main Content Area - Chat */}
+          {selectedPersona && (
+            <div className="w-full">
               <PersonaChat persona={selectedPersona} />
-            ) : (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-600">Select a persona to start chatting</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
       <DebugPanel />
