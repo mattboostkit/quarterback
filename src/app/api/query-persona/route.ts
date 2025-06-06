@@ -60,8 +60,36 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Query persona error:', error)
+    
+    // Provide more specific error messages
+    let errorMessage = 'Failed to query persona'
+    let errorDetails = {}
+    
+    if (error.code === '22P02') {
+      errorMessage = 'Invalid persona ID format'
+    } else if (error.code === 'PGRST116') {
+      errorMessage = 'Persona not found'
+    } else if (error.message?.includes('OpenAI')) {
+      errorMessage = 'OpenAI API error: ' + error.message
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+    
+    // Include additional error info in development
+    if (process.env.NODE_ENV === 'development') {
+      errorDetails = {
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        message: error.message
+      }
+    }
+    
     return NextResponse.json(
-      { error: error.message || 'Failed to query persona' },
+      { 
+        error: errorMessage,
+        ...errorDetails
+      },
       { status: 500 }
     )
   }
@@ -122,8 +150,11 @@ async function queryOpenAI(context: string, query: string): Promise<string> {
   const openaiKey = process.env.OPENAI_API_KEY
 
   if (!openaiKey) {
+    console.error('OpenAI API key not found in environment variables')
     throw new Error('OpenAI API key not configured')
   }
+  
+  console.log('Using OpenAI model: gpt-4o-mini')
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

@@ -111,7 +111,9 @@ export function PersonaChat({ persona }: { persona: Persona }) {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to get response')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('API Error:', errorData)
+        throw new Error(errorData.error || 'Failed to get response')
       }
 
       const data = await response.json()
