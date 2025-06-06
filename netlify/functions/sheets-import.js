@@ -15,6 +15,14 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    // Debug environment variables (remove sensitive parts)
+    console.log('Environment check:', {
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      hasGoogleKey: !!process.env.GOOGLE_SHEETS_API_KEY,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...'
+    })
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -22,7 +30,13 @@ exports.handler = async (event, context) => {
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ error: 'Missing Supabase configuration' })
+        body: JSON.stringify({ 
+          error: 'Missing Supabase configuration',
+          details: {
+            hasUrl: !!supabaseUrl,
+            hasKey: !!supabaseServiceKey
+          }
+        })
       }
     }
 
@@ -59,6 +73,11 @@ exports.handler = async (event, context) => {
       const { personaName, projectId } = JSON.parse(event.body)
 
       // Create persona with mock data for MVP
+      console.log('Creating persona with data:', {
+        projectId: projectId || '22222222-2222-2222-2222-222222222222',
+        personaName: personaName || 'Informed Professionals'
+      })
+
       const { data: persona, error: personaError } = await supabase
         .from('personas')
         .insert({
@@ -82,35 +101,48 @@ exports.handler = async (event, context) => {
         .single()
 
       if (personaError) {
-        console.error('Error creating persona:', personaError)
-        throw personaError
+        console.error('Supabase error details:', personaError)
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({
+            error: 'Database Error: ' + (personaError.message || 'Failed to create persona'),
+            details: personaError.details || 'Check function logs',
+            hint: personaError.hint || 'Verify Supabase configuration'
+          })
+        }
       }
 
       // Notify N8N webhook
       try {
         const webhookUrl = 'https://n8n.tradescale.ai/webhook/quarterback'
-        await fetch(webhookUrl, {
+        const webhookPayload = {
+          event: 'persona_created',
+          timestamp: new Date().toISOString(),
+          personaId: persona.id,
+          projectId: persona.project_id,
+          clientId: '11111111-1111-1111-1111-111111111111',
+          personaName: persona.name,
+          status: 'created',
+          source: 'google_sheets'
+        }
+        
+        console.log('Sending N8N webhook:', webhookPayload)
+        
+        const webhookResponse = await fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            event: 'persona_created',
-            timestamp: new Date().toISOString(),
-            data: {
-              personaId: persona.id,
-              projectId: persona.project_id,
-              clientId: '11111111-1111-1111-1111-111111111111',
-              personaName: persona.name,
-              status: 'created',
-              metadata: {
-                uploadedAt: new Date().toISOString(),
-                fileName: 'google_sheets_import',
-                source: 'google_sheets'
-              }
-            }
-          })
+          body: JSON.stringify(webhookPayload)
         })
+        
+        if (!webhookResponse.ok) {
+          const errorText = await webhookResponse.text()
+          console.warn('N8N webhook failed:', webhookResponse.status, errorText)
+        } else {
+          console.log('N8N webhook successful')
+        }
       } catch (webhookError) {
-        console.warn('N8N webhook failed:', webhookError.message)
+        console.warn('N8N webhook error:', webhookError.message)
       }
 
       return {
