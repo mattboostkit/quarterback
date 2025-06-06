@@ -97,17 +97,31 @@ export function PersonaChat({ persona }: { persona: Persona }) {
           content: messageText
         })
 
-      // In production, this would call an Edge Function
-      // For now, we'll simulate a response
+      // Call the API to get response from OpenAI
+      const response = await fetch('/api/query-persona', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          personaId: persona.id,
+          conversationId: conversationId,
+          query: messageText
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to get response')
+      }
+
+      const data = await response.json()
+      
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
-        content: generateMockResponse(messageText, persona),
+        content: data.response,
         created_at: new Date().toISOString()
       }
-
-      // Simulate typing delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
       
       setMessages(prev => [...prev, assistantMessage])
 
@@ -174,8 +188,8 @@ Would you like me to elaborate on any specific aspect of how this audience segme
             personaId: persona.id,
             queryType: templateTitle,
             queryTemplate: query,
-            response: 'Generated response', // In real app, get actual response
-            responseLength: 0, // Would be actual response length
+            response: messages[messages.length - 1]?.content || 'Generated response',
+            responseLength: messages[messages.length - 1]?.content.length || 0,
             metadata: {
               completedAt: new Date().toISOString(),
               processingTime: Date.now() - startTime
