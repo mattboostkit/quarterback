@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { FileUpload } from '@/components/FileUpload'
 import { SheetsImport } from '@/components/SheetsImport'
 import { PersonaChat } from '@/components/PersonaChat'
+import { QueryTemplatePanel } from '@/components/QueryTemplatePanel'
 import { DebugPanel } from '@/components/DebugPanel'
 import { SimpleTest } from '@/components/SimpleTest'
 import { supabase } from '@/lib/supabase'
@@ -27,6 +28,7 @@ export default function Home() {
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null)
   const [activeView, setActiveView] = useState<'upload' | 'sheets' | 'chat'>('upload')
   const [loading, setLoading] = useState(true)
+  const [pendingQuery, setPendingQuery] = useState<{query: string, title: string} | null>(null)
 
   useEffect(() => {
     loadPersonas()
@@ -183,9 +185,9 @@ export default function Home() {
         </header>
 
         <div className="space-y-6">
-          {/* Top Section - Data Source Selection and Personas */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div className="lg:col-span-1 space-y-6">
+          {/* Top Section - Data Source Selection, Personas, and Templates */}
+          <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
+            <div className="lg:col-span-2 space-y-6">
             {/* Data Source Selection */}
             <div className="flex gap-2">
               <Button 
@@ -221,22 +223,22 @@ export default function Home() {
                     <p className="text-sm text-gray-500 text-center py-2">No personas yet</p>
                   ) : (
                     personas.map((persona) => (
-                      <div key={persona.id} className="flex items-center gap-2">
+                      <div key={persona.id} className="flex items-center gap-2 w-full">
                         <Button
                           variant={selectedPersona?.id === persona.id ? 'default' : 'ghost'}
-                          className="flex-1 justify-start"
+                          className="flex-1 justify-start min-w-0 overflow-hidden"
                           onClick={() => {
                             setSelectedPersona(persona)
                             setActiveView('chat')
                           }}
                         >
-                          <FileText className="w-4 h-4 mr-2" />
-                          {persona.name}
+                          <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
+                          <span className="truncate">{persona.name}</span>
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                           onClick={(e) => {
                             e.stopPropagation()
                             handleDeletePersona(persona.id)
@@ -253,7 +255,7 @@ export default function Home() {
             </div>
 
             {/* Upload/Import Section */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-2">
               {activeView === 'upload' ? (
                 <FileUpload 
                   projectId={DEMO_PROJECT_ID}
@@ -273,12 +275,30 @@ export default function Home() {
                 </Card>
               )}
             </div>
+
+            {/* Query Templates Section */}
+            {selectedPersona && (
+              <div className="lg:col-span-2">
+                <QueryTemplatePanel 
+                  onRunQuery={async (query: string, templateTitle: string) => {
+                    // Set the pending query for the chat component to handle
+                    setPendingQuery({query, title: templateTitle})
+                    setActiveView('chat')
+                  }}
+                  isLoading={false}
+                />
+              </div>
+            )}
           </div>
 
           {/* Main Content Area - Chat */}
           {selectedPersona && (
             <div className="w-full">
-              <PersonaChat persona={selectedPersona} />
+              <PersonaChat 
+                persona={selectedPersona} 
+                pendingQuery={pendingQuery}
+                onQueryProcessed={() => setPendingQuery(null)}
+              />
             </div>
           )}
         </div>

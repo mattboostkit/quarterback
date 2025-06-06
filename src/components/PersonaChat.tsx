@@ -22,7 +22,15 @@ type Persona = {
 }
 
 
-export function PersonaChat({ persona }: { persona: Persona }) {
+export function PersonaChat({ 
+  persona, 
+  pendingQuery, 
+  onQueryProcessed 
+}: { 
+  persona: Persona
+  pendingQuery?: {query: string, title: string} | null
+  onQueryProcessed?: () => void
+}) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -38,6 +46,14 @@ export function PersonaChat({ persona }: { persona: Persona }) {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  useEffect(() => {
+    // Handle pending query from the main page query templates
+    if (pendingQuery && conversationId) {
+      sendMessage(pendingQuery.query)
+      onQueryProcessed?.()
+    }
+  }, [pendingQuery, conversationId])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -205,18 +221,9 @@ Would you like me to elaborate on any specific aspect of how this audience segme
   }
 
   return (
-    <div className="space-y-6">
-      {/* Query Templates Panel */}
-      <div>
-        <QueryTemplatePanel 
-          onRunQuery={handleTemplateQuery}
-          isLoading={loading}
-        />
-      </div>
-
+    <div>
       {/* Chat Interface */}
-      <div>
-        <Card className="h-[500px] flex flex-col">
+      <Card className="h-[500px] flex flex-col">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -297,7 +304,6 @@ Would you like me to elaborate on any specific aspect of how this audience segme
         </div>
           </CardContent>
         </Card>
-      </div>
     </div>
   )
 }
